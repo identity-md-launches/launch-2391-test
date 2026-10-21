@@ -1,0 +1,31 @@
+{
+  "kind": "univ4_hook",
+  "hook": {
+    "contract": "TestHook",
+    "constructorArgs": [
+      "$poolManager",
+      "$token",
+      "$factory"
+    ],
+    "permissions": [
+      "beforeInitialize",
+      "beforeSwap",
+      "afterSwap",
+      "beforeSwapReturnDelta",
+      "afterSwapReturnDelta"
+    ]
+  },
+  "token": {
+    "contract": "TestToken",
+    "name": "Test",
+    "symbol": "TEST",
+    "decimals": 18
+  },
+  "pool": {
+    "pairedCurrency": "0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127",
+    "fee": 12500,
+    "tickSpacing": 60,
+    "initialPrice": "79228162514264337593543950336"
+  },
+  "notes": "TestHook is the immutable fee hook of the TEST/IMD pool on Robinhood Chain (chain id 4663), a test of the SIMD v2 tokenomics. Logo: https://www.si-md.xyz/logo.jpg. Constructor: TestHook(IPoolManager manager_, address token_, address factory_), written $poolManager, $token, $factory in declaration order. There is no owner argument and no $owner anywhere: the brief says nobody can change it, so the hook has no owner, admin, setter, upgrade path, pause or blacklist. Every recipient and rate is a compile-time constant: IMD 0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127, SIMD Vault 0xbba92992309c61e1c483ab630d0530f2c9edede7, CompensationVault 0x9f4419712cc22f615e393cc846b927be3d7d802c, LP fee 12500, tick spacing 60, standing hook fee 0.75%, anti-sniper window 1800 s. The hook ignores hookData, so no caller can redirect or skip the fee. Permissions returned by getHookPermissions: beforeInitialize, beforeSwap, afterSwap, beforeSwapReturnDelta, afterSwapReturnDelta; the address flags are 0x20cc and the constructor validates them. beforeInitialize accepts only the PoolManager as caller and only the constructor-given factory as initializer, for the exact TEST/IMD key with fee 12500 and tick spacing 60, and records block.timestamp once as the start of the anti-sniper window; it cannot be reset. No liquidity callbacks are enabled, so the factory's zero-change fee collection passes untouched. Fee: on every buy (IMD in, TEST out) and sell (TEST in, IMD out), 0.75% of the gross IMD side is taken in IMD and sent to the SIMD Vault; it is never swapped for ETH. With the 1.25% LP fee a trade costs about 2% in total (the two fees apply to v4 settlement bases, so a fully filled exact-input buy pays 1.990625% of the original input, not a separate flat 2%). Anti-sniper on buys only: total buy rate r(t) = 0.75% + 49.25% x max(1800 - t, 0) / 1800 seconds after initialization, so 50% at 0 s, 25.375% at 900 s and 0.75% from 1800 s; everything above 0.75% goes in IMD to the CompensationVault. Sells always pay exactly 0.75% and nothing to the CompensationVault. Exact-input buys pay out of the input budget, exact-output buys gross up the IMD input, exact-input sells deduct from IMD output, exact-output sells gross up the AMM output; partial fills pay on executed amounts, using a rollback-only internal quote in beforeSwap when IMD is the specified currency. The hook never deliberately reverts a real swap. Payment resilience: the hook tries PoolManager.take(IMD, recipient, fee) during the swap; if the manager holds too little IMD yet or a recipient rejects the transfer it mints an ERC-6909 IMD claim to itself and records pendingVault / pendingCompensation. Anyone may call redeemFees(), which burns the claims and pays only the two fixed recipients; a caller supplies no address or amount. A fresh manager seeded with TEST only therefore accepts the first buy. TestToken is a plain OpenZeppelin ERC-20, name Test, symbol TEST, 18 decimals, no constructor arguments, minting 1,000,000,000 tokens once to its deployer (the factory); no owner, mint, pause or blacklist. The pool values above are the launch policy's; the deployer derives the real opening price from the 2,500 IMD opening market cap and the currency order. Supply, allocations and the CompensationVault's 10% are paid out by the factory under the launch policy, not by these contracts. The SIMD Vault's weekly split and the CompensationVault's refunds are those existing contracts' business; the hook only pays them in IMD. Tests: local v4 suites (unit, fuzz, invariant, adversarial) cover both fee legs, the anti-sniper curve at 0, 900 and 1800 s, sells paying none of it, and that nothing can redirect the fee; the Robinhood fork suite skips cleanly without an RPC."
+}
