@@ -11,15 +11,21 @@ contract TokenRecipient {
     }
 }
 
+contract TokenFactoryFixture {
+    function deploy() external returns (TestToken) {
+        return new TestToken();
+    }
+}
+
 contract TestTokenTest is Test {
     TestToken private token;
     address private factory;
     uint256 private constant SUPPLY = 1_000_000_000 ether;
 
     function setUp() public {
-        factory = makeAddr("launch factory");
-        vm.prank(factory);
-        token = new TestToken();
+        TokenFactoryFixture deployer = new TokenFactoryFixture();
+        factory = address(deployer);
+        token = deployer.deploy();
     }
 
     function test_fixedSupplyAndMetadata() public view {

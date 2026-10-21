@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {HookTestBase} from "./helpers/HookTestBase.sol";
+import {HookAdversarialTests} from "./HookAdversarial.t.sol";
 import {TestHook} from "../src/TestHook.sol";
 import {TestToken} from "../src/TestToken.sol";
 import {HookFlags} from "../src/HookFlags.sol";
@@ -19,7 +20,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {MockIMD} from "./mocks/MockIMD.sol";
 
 /// @dev The same economics suite executes locally and against the real IMD token on a fork.
-abstract contract HookEconomicTests is HookTestBase {
+abstract contract HookEconomicTests is HookAdversarialTests {
     using StateLibrary for IPoolManager;
 
     function test_initializationAndPermissions() public view {
